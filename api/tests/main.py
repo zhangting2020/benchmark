@@ -17,7 +17,7 @@ from __future__ import print_function
 import argparse
 import os
 import feeder
-import json
+import yaml
 
 import sys
 sys.path.append("..")
@@ -31,6 +31,7 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Unsupported value encountered.')
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -63,7 +64,8 @@ def parse_args():
         '--profiler',
         type=str,
         default="none",
-        help='Choose which profiler to use [\"none\"|\"Default\"|\"OpDetail\"|\"AllOpDetail\"|\"nvprof\"]')
+        help='Choose which profiler to use [\"none\"|\"Default\"|\"OpDetail\"|\"AllOpDetail\"|\"nvprof\"]'
+    )
     parser.add_argument(
         '--backward',
         type=str2bool,
@@ -75,15 +77,9 @@ def parse_args():
         default=False,
         help='Whether using gpu [True|False]')
     parser.add_argument(
-        '--repeat',
-        type=int,
-        default=1,
-        help='Iterations of Repeat running')
+        '--repeat', type=int, default=1, help='Iterations of Repeat running')
     parser.add_argument(
-        '--log_level',
-        type=int,
-        default=0,
-        help='level of logging')
+        '--log_level', type=int, default=0, help='level of logging')
     parser.add_argument(
         '--gpu_id',
         type=int,
@@ -92,7 +88,8 @@ def parse_args():
     args = parser.parse_args()
     gpu_id = args.gpu_id if args.gpu_id > 0 else 0
     if os.environ.get("CUDA_VISIBLE_DEVICES", None) is None:
-        print("CUDA_VISIBLE_DEVICES is None, set to CUDA_VISIBLE_DEVICES={}".format(gpu_id))
+        print("CUDA_VISIBLE_DEVICES is None, set to CUDA_VISIBLE_DEVICES={}".
+              format(gpu_id))
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     if args.task not in ["speed", "accuracy"]:
         raise ValueError("task should be speed, accuracy")
@@ -114,26 +111,27 @@ def test_paddle(task, obj, args, feed_list=None):
 
     if task == "speed":
         if args.run_with_executor:
-            obj.run_with_executor(use_gpu=args.use_gpu,
-                                  feed=feed,
-                                  repeat=args.repeat,
-                                  log_level=args.log_level,
-                                  check_output=args.check_output,
-                                  profiler=args.profiler)
+            obj.run_with_executor(
+                use_gpu=args.use_gpu,
+                feed=feed,
+                repeat=args.repeat,
+                log_level=args.log_level,
+                check_output=args.check_output,
+                profiler=args.profiler)
         else:
-            obj.run_with_core_executor(use_gpu=args.use_gpu,
-                                       feed=feed,
-                                       repeat=args.repeat,
-                                       log_level=args.log_level,
-                                       check_output=args.check_output,
-                                       profiler=args.profiler)
+            obj.run_with_core_executor(
+                use_gpu=args.use_gpu,
+                feed=feed,
+                repeat=args.repeat,
+                log_level=args.log_level,
+                check_output=args.check_output,
+                profiler=args.profiler)
         return None
     elif task == "accuracy":
         if feed is None:
             raise ValueError("feed should not be None when checking accuracy.")
-        outputs = obj.run_with_executor(use_gpu=args.use_gpu,
-                                        feed=feed,
-                                        check_output=False)
+        outputs = obj.run_with_executor(
+            use_gpu=args.use_gpu, feed=feed, check_output=False)
         return outputs
 
 
@@ -158,9 +156,7 @@ def test_tensorflow(task, obj, args, feed_list=None):
     elif task == "accuracy":
         if feed is None:
             raise ValueError("feed should not be None when checking accuracy.")
-        outputs = obj.run(use_gpu=args.use_gpu,
-                          feed=feed,
-                          check_output=False)
+        outputs = obj.run(use_gpu=args.use_gpu, feed=feed, check_output=False)
         return outputs
 
 
@@ -170,23 +166,27 @@ def test_speed_main(obj):
     test_paddle("speed", obj, args)
 
 
-def test_per_config(pd_obj=None, tf_obj=None, feed_spec=None, api_config=None, args=None):
+def test_per_config(pd_obj=None,
+                    tf_obj=None,
+                    feed_spec=None,
+                    api_config=None,
+                    args=None):
     feed_list = None
     if args.task == "accuracy" or args.framework in ["paddle", "both"]:
         if pd_obj is None:
             raise ValueError("Paddle object is None.")
-        pd_obj.api_config = api_config
-        pd_obj.api_config = pd_obj.to_pd_api_config()
+        pd_obj.api_config = pd_obj.to_pd_api_config(api_config)
         pd_obj.create_progrom()
         pd_obj.build_program(backward=args.backward, dtype=args.dtype)
         feed_list = feeder.feed_paddle(pd_obj, feed_spec)
         pd_outputs = test_paddle(args.task, pd_obj, args, feed_list)
 
-    if args.task == "accuracy" or args.framework in ["tensorflow", "tf", "both"]:
+    if args.task == "accuracy" or args.framework in [
+            "tensorflow", "tf", "both"
+    ]:
         if tf_obj is None:
             raise ValueError("TensorFlow object is None.")
-        tf_obj.api_config = api_config
-        tf_obj.api_config = tf_obj.to_tf_api_config()
+        tf_obj.api_config = tf_obj.to_tf_api_config(api_config)
         tf_obj.build_graph(backward=args.backward)
         feed_list = feeder.feed_tensorflow(tf_obj, feed_list, feed_spec)
         tf_outputs = test_tensorflow(args.task, tf_obj, args, feed_list)
@@ -199,10 +199,7 @@ def test_main(pd_obj=None, tf_obj=None, feed_spec=None):
     args = parse_args()
     config_file = os.path.join('APIConfig', pd_obj.name + '.json')
     with open(config_file, 'r') as f:
-        api_configs = json.load(f)
+        api_configs = yaml.safe_load(f)
 
     for api_config in api_configs:
         test_per_config(pd_obj, tf_obj, feed_spec, api_config, args)
-
-
-    

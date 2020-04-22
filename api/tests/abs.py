@@ -19,6 +19,7 @@ sys.path.append("..")
 from common import paddle_api_benchmark as paddle_api
 from common import tensorflow_api_benchmark as tensorflow_api
 
+
 class PDAbs(paddle_api.PaddleAPIBenchmarkBase):
     def __init__(self):
         super(PDAbs, self).__init__()
@@ -26,10 +27,13 @@ class PDAbs(paddle_api.PaddleAPIBenchmarkBase):
 
     def build_program(self, backward=False, dtype=None):
         import paddle.fluid as fluid
-        
+
         with fluid.program_guard(self.main_program, self.startup_program):
             data = fluid.data(
-                name='data', shape=self.api_config['input_shape'], dtype='float32', lod_level=0)
+                name='data',
+                shape=self.api_config['input_shape'],
+                dtype='float32',
+                lod_level=0)
             data.stop_gradient = False
             result = fluid.layers.abs(x=data)
 
@@ -43,14 +47,13 @@ class TFAbs(tensorflow_api.TensorflowAPIBenchmarkBase):
     def __init__(self):
         super(TFAbs, self).__init__()
         self.name = "abs"
+        self.allow_growth = True
 
     def build_graph(self, backward=False, dtype=None):
         import tensorflow as tf
 
-        self.name = "abs"
-        self.allow_growth = True
-
-        data = tf.placeholder(shape=self.api_config['input_shape'], dtype=tf.float32)
+        data = tf.placeholder(
+            shape=self.api_config['input_shape'], dtype=tf.float32)
         result = tf.abs(x=data)
 
         self.feed_list = [data]
@@ -60,5 +63,5 @@ class TFAbs(tensorflow_api.TensorflowAPIBenchmarkBase):
 
 
 if __name__ == '__main__':
-    feed_spec = { "range": [-1, 1] }
+    feed_spec = {"range": [-1, 1]}
     test_main(PDAbs(), TFAbs(), feed_spec=feed_spec)

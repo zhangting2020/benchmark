@@ -1,0 +1,55 @@
+[
+    {
+        "padding": [
+            1, 
+            8
+        ], 
+        "filter_size": [
+            3, 
+            32
+        ], 
+        "groups": 1, 
+        "num_filters": 1, 
+        "use_cudnn": true, 
+        "stride": [
+            1, 
+            16
+        ], 
+        "input_shape": [
+            1, 
+            1, 
+            80, 
+            1008
+        ], 
+        "dilation": [
+            1, 
+            1
+        ], 
+        "data_format": "NCHW"
+    }, 
+    {
+        "padding": "SAME", 
+        "filter_size": [
+            7, 
+            7
+        ], 
+        "groups": 1, 
+        "num_filters": 64, 
+        "use_cudnn": true, 
+        "stride": [
+            2, 
+            2
+        ], 
+        "input_shape": [
+            32, 
+            3, 
+            224, 
+            224
+        ], 
+        "dilation": [
+            1, 
+            1
+        ], 
+        "data_format": "NCHW"
+    }
+]
