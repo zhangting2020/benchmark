@@ -17,6 +17,7 @@ from __future__ import print_function
 import argparse
 import os
 import feeder
+import json
 
 import sys
 sys.path.append("..")
@@ -169,13 +170,14 @@ def test_speed_main(obj):
     test_paddle("speed", obj, args)
 
 
-def test_main(pd_obj=None, tf_obj=None, feed_spec=None):
-    args = parse_args()
-
+def test_per_config(pd_obj=None, tf_obj=None, feed_spec=None, api_config=None, args=None):
     feed_list = None
     if args.task == "accuracy" or args.framework in ["paddle", "both"]:
         if pd_obj is None:
             raise ValueError("Paddle object is None.")
+        pd_obj.api_config = api_config
+        pd_obj.api_config = pd_obj.to_pd_api_config()
+        pd_obj.create_progrom()
         pd_obj.build_program(backward=args.backward, dtype=args.dtype)
         feed_list = feeder.feed_paddle(pd_obj, feed_spec)
         pd_outputs = test_paddle(args.task, pd_obj, args, feed_list)
@@ -183,9 +185,24 @@ def test_main(pd_obj=None, tf_obj=None, feed_spec=None):
     if args.task == "accuracy" or args.framework in ["tensorflow", "tf", "both"]:
         if tf_obj is None:
             raise ValueError("TensorFlow object is None.")
+        tf_obj.api_config = api_config
+        tf_obj.api_config = tf_obj.to_tf_api_config()
         tf_obj.build_graph(backward=args.backward)
         feed_list = feeder.feed_tensorflow(tf_obj, feed_list, feed_spec)
         tf_outputs = test_tensorflow(args.task, tf_obj, args, feed_list)
 
     if args.task == "accuracy":
         utils.check_outputs(pd_outputs, tf_outputs, name=pd_obj.name)
+
+
+def test_main(pd_obj=None, tf_obj=None, feed_spec=None):
+    args = parse_args()
+    config_file = os.path.join('APIConfig', pd_obj.name + '.json')
+    with open(config_file, 'r') as f:
+        api_configs = json.load(f)
+
+    for api_config in api_configs:
+        test_per_config(pd_obj, tf_obj, feed_spec, api_config, args)
+
+
+    

@@ -69,8 +69,7 @@ def feed_paddle(obj, feed_spec=None):
         else:
             spec = {}
             
-        if spec.get("shape", None) is None:
-            spec["shape"] = var.shape
+        spec["shape"] = var.shape
         if spec.get("dtype", None) is None:
             spec["dtype"] = paddle_api.convert_dtype(var.dtype)
 
@@ -120,8 +119,7 @@ def feed_tensorflow(obj, feed_list=None, feed_spec=None):
             else:
                 spec = {}
         
-            if spec.get("shape", None) is None:
-                spec["shape"] = var.shape
+            spec["shape"] = var.shape
             if spec.get("dtype", None) is None:
                 spec["dtype"] = tensorflow_api.convert_dtype(var.dtype)
 

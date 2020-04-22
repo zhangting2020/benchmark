@@ -88,6 +88,7 @@ class TensorflowAPIBenchmarkBase(object):
         self.feed_list = None
         self.fetch_list = None
         self.allow_growth = False
+        self.api_config = {}
 
     @abc.abstractmethod
     def build_graph(self, backward=False):
@@ -176,6 +177,9 @@ class TensorflowAPIBenchmarkBase(object):
         stats["device"] = "GPU" if use_gpu else "CPU"
         utils.print_stat(stats, log_level=log_level)
         return outputs
+
+    def to_tf_api_config(self):
+        return self.aip_config
 
     def _set_config(self, use_gpu):
         if tf.__version__ < "1.14.0":

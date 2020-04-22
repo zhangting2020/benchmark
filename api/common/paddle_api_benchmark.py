@@ -81,10 +81,15 @@ class PaddleAPIBenchmarkBase(object):
         self.feed_vars = None
         self.fetch_vars = None
         self.feed_tensors = {}
+        self.api_config = {}
 
     @abc.abstractmethod
     def build_program(self, backward=False, dtype=None):
         pass
+
+    def create_progrom(self):
+        self.main_program = fluid.Program()
+        self.startup_program = fluid.Program()
 
     def append_gradients(self, targets, inputs):
         if isinstance(inputs, fluid.framework.Variable):
@@ -194,6 +199,9 @@ class PaddleAPIBenchmarkBase(object):
         stats["device"] = "GPU" if use_gpu else "CPU"
         utils.print_stat(stats, log_level=log_level)
         return outputs
+
+    def to_pd_api_config(self):
+        return self.aip_config
 
     def _feed_random_data(self, use_gpu, as_lodtensor=False):
         print("feed random data")
